@@ -1,0 +1,45 @@
+# Acts as a second person (github-actions[bot]) so the lab can hold PRs in states a solo account can't make.
+name: bot
+on:
+  workflow_dispatch:
+    inputs:
+      action: { description: "open | push | approve | changes", required: true }
+      branch: { description: "branch for open/push", required: false }
+      base: { description: "base for open", required: false, default: main }
+      title: { description: "title for open", required: false }
+      pr: { description: "PR number for approve/changes", required: false }
+      reviewer: { description: "reviewer to request on open", required: false }
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          ACTION: ${{ inputs.action }}
+          BRANCH: ${{ inputs.branch }}
+          BASE: ${{ inputs.base }}
+          TITLE: ${{ inputs.title }}
+          PR: ${{ inputs.pr }}
+          REVIEWER: ${{ inputs.reviewer }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          case "$ACTION" in
+            open)
+              git switch -c "$BRANCH" "origin/$BASE"
+              echo "$BRANCH" > "bot-$BRANCH.txt"
+              git add -A && git commit -m "$TITLE" && git push -u origin "$BRANCH"
+              gh pr create --base "$BASE" --head "$BRANCH" --title "$TITLE" --body "Lab scenario." ${REVIEWER:+--reviewer "$REVIEWER"} ;;
+            push)
+              git switch "$BRANCH"
+              echo "changed after review $(date -u +%s)" >> "bot-$BRANCH.txt"
+              git commit -am "Change after review" && git push ;;
+            approve) gh pr review "$PR" --approve --body "Lab approval." ;;
+            changes) gh pr review "$PR" --request-changes --body "Lab: please change this." ;;
+            *) echo "unknown action $ACTION"; exit 1 ;;
+          esac
