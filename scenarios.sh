@@ -66,6 +66,14 @@ git switch -q main
 mine quiet-root main "Quiet root, failing child below"
 mine failing-child quiet-root "Failing child"
 
+# Stack 3: draft root with an open, failing child. Lands in My PRs because one PR is open.
+mine draft-root main "Draft root" --draft
+mine open-child draft-root "Open child on a draft root, CI failing"
+
+# Stack 4: every PR a draft, so the whole stack lands in Drafts.
+mine draft-stack-root main "All-draft stack root" --draft
+mine draft-stack-child draft-stack-root "All-draft stack child" --draft
+
 echo "Bot PRs"
 bot -f action=open -f branch=bot-review -f title="Needs your review" -f reviewer="$ME"
 bot -f action=open -f branch=bot-ready -f title="You approved, ready to merge"
@@ -92,6 +100,7 @@ git fetch -q origin
 for b in wait conflict changes ready draft stack-root stack-mid quiet-root bot-review bot-ready bot-stale bot-changes; do ci "$b" success; done
 ci ci-fail failure
 ci failing-child failure
+ci open-child failure
 ci bot-ci-fail failure
 ci ci-running pending
 echo "Done"
