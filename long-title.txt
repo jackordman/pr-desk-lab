@@ -1,0 +1,1 @@
+A deliberately long title to see how truncation behaves when the PR title keeps going well past the width of the panel
