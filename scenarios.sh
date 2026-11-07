@@ -104,3 +104,5 @@ ci open-child failure
 ci bot-ci-fail failure
 ci ci-running pending
 echo "Done"
+
+./extra.sh
